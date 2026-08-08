@@ -2,7 +2,7 @@ if FCOCS == nil then FCOCS = {} end
 local FCOChangeStuff = FCOCS
 
 local addonVars = FCOChangeStuff.addonVars
-local WM = WINDOW_MANAGER
+local addButton = FCOChangeStuff.AddButton
 
 --======================================================================================================================
 --PROMOTIONAL EVENT TRACKER (Golden Pursuits)
@@ -455,53 +455,38 @@ local function getHUDEditorInfoBoxSettingsContextMenu()
 
 end
 
--- Native Button textures (not a child CT_TEXTURE): InfoBox BG is layer CONTROLS + MungeOverlay;
--- AddButton's texture child composites under that backdrop while the button still receives hits.
-local function createHUDEditorInfoBoxSettingsButton()
-    local infoBox = HEK_KB and HEK_KB.infoBox
-    if not infoBox then return nil end
-
-    local buttonName = infoBox:GetName() .. "_FCOCS_HUDEditInfoBoxSettingsContextMenu"
-    local button = WM:GetControlByName(buttonName, "")
-    if button == nil then
-        button = WM:CreateControl(buttonName, infoBox, CT_BUTTON)
-    end
-    if button == nil then return nil end
-
-    button:SetDimensions(32, 32)
-    button:ClearAnchors()
-    button:SetAnchor(TOPLEFT, infoBox, TOPLEFT, 10, 10)
-    button:SetDrawLevel(ZO_HUD_EDITOR_KEYBOARD_INFO_BOX_INTERACTABLE_ELEMENT_LEVEL)
-    button:SetExcludeFromResizeToFitExtents(true)
-    button:SetMouseOverBlendMode(TEX_BLEND_MODE_ADD)
-    button:SetMouseEnabled(true)
-
-    button:SetNormalTexture("/esoui/art/chatwindow/chat_options_up.dds")
-    button:SetPressedTexture("/esoui/art/chatwindow/chat_options_down.dds")
-    button:SetMouseOverTexture("/esoui/art/chatwindow/chat_options_over.dds")
-    button:SetDisabledTexture("/esoui/art/chatwindow/chat_options_disabled.dds")
-
-    local tooltipText = addonVars.addonNameMenuDisplay .. " HUD Editor settings"
-    button:SetHandler("OnMouseEnter", function(self)
-        ZO_Tooltips_ShowTextTooltip(self, TOP, tooltipText)
-    end)
-    button:SetHandler("OnMouseExit", function()
-        ZO_Tooltips_HideTextTooltip()
-    end)
-    button:SetHandler("OnClicked", function()
-        getHUDEditorInfoBoxSettingsContextMenu()
-    end)
-
-    button.type = "settings"
-    return button
-end
+local buttonDataHUDEditInfoBoxSettings =
+{
+    buttonName      = "HUDEditInfoBoxSettingsContextMenu",
+    parentControl   = nil, -- set when HUD editor InfoBox is available
+    tooltip         = addonVars.addonNameMenuDisplay .. " HUD Editor settings",
+    callback        = function()
+        return getHUDEditorInfoBoxSettingsContextMenu()
+    end,
+    width           = 32,
+    height          = 32,
+    normal          = "/esoui/art/chatwindow/chat_options_up.dds",
+    pressed         = "/esoui/art/chatwindow/chat_options_down.dds",
+    highlight       = "/esoui/art/chatwindow/chat_options_over.dds",
+    disabled        = "/esoui/art/chatwindow/chat_options_disabled.dds",
+    drawLevel       = ZO_HUD_EDITOR_KEYBOARD_INFO_BOX_INTERACTABLE_ELEMENT_LEVEL,
+    excludeFromResizeToFitExtents = true,
+    visible         = function() return FCOChangeStuff.settingsVars.settings.showHUDEditorInfoBoxSettingsButton end
+}
 
 local function updateHUDEditorInfoBoxSettingsButtonVisibility()
     local showButton = FCOChangeStuff.settingsVars.settings.showHUDEditorInfoBoxSettingsButton == true
     if showButton then
         if infoBoxSettingsButton == nil then
-            infoBoxSettingsButton = createHUDEditorInfoBoxSettingsButton()
-            FCOChangeStuff._infoBoxSettingsButton = infoBoxSettingsButton
+            local infoBox = HEK_KB and HEK_KB.infoBox
+            if not infoBox then return end
+            buttonDataHUDEditInfoBoxSettings.parentControl = infoBox
+            addButton = addButton or FCOChangeStuff.AddButton
+            infoBoxSettingsButton = addButton(TOPLEFT, infoBox, TOPLEFT, 10, 10, buttonDataHUDEditInfoBoxSettings)
+            if infoBoxSettingsButton then
+                infoBoxSettingsButton.type = "settings"
+                FCOChangeStuff._infoBoxSettingsButton = infoBoxSettingsButton
+            end
         end
         if infoBoxSettingsButton then
             infoBoxSettingsButton:SetHidden(false)
@@ -519,6 +504,7 @@ local function HUDManagerAndHUDEditorKeyboard_Hooks(fromSceneChange)
     if fromSceneChange == true and not infoBoxShownAtSceneChangeHookDone then
         local infoBox = HEK_KB.infoBox
         if infoBox then
+            buttonDataHUDEditInfoBoxSettings.parentControl = infoBox
             ZO_PostHookHandler(infoBox, "OnEffectivelyShown", function()
                 updateHUDEditorInfoBoxSettingsButtonVisibility()
             end)

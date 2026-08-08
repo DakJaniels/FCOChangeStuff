@@ -77,47 +77,29 @@ local function AddButton(parent, name, callbackFunction, onMouseUpCallbackFuncti
             button:SetText(text)
 
         else
-            --Texture
-            local texture
-
-            --Check if texture exists
-            texture = WM:GetControlByName(name .. "Texture", "")
-            if texture == nil then
-                --Create the texture for the button to hold the image
-                texture = WM:CreateControl(name .. "Texture", button, CT_TEXTURE)
-            end
-            texture:SetAnchorFill()
-
-            --Set the texture for normale state now
-            texture:SetTexture(textureNormal)
-
-            --Do we have seperate textures for the button states?
-            button.upTexture 	  = textureNormal
-            button.downTexture 	  = textureMouseOver or textureNormal
-            button.clickedTexture = textureClicked or textureNormal
+            -- Native button textures (same path as ZO_CloseButton / chat Options)
+            button:SetNormalTexture(textureNormal)
+            button:SetPressedTexture(textureClicked or textureNormal)
+            button:SetMouseOverTexture(textureMouseOver or textureNormal)
+            button:SetDisabledTexture(textureNormal)
+            button:SetMouseOverBlendMode(TEX_BLEND_MODE_ADD)
         end
 
         if tooltipAlign == nil then tooltipAlign = TOP end
 
         --Set a tooltip?
         if tooltipText ~= nil then
-            button.tooltipText	= tooltipText
+            button.tooltipText = tooltipText
             button.tooltipAlign = tooltipAlign
             button:SetHandler("OnMouseEnter", function(self)
-                self:GetChild(1):SetTexture(self.downTexture)
                 ZO_Tooltips_ShowTextTooltip(self, self.tooltipAlign, self.tooltipText)
             end)
-            button:SetHandler("OnMouseExit", function(self)
-                self:GetChild(1):SetTexture(self.upTexture)
+            button:SetHandler("OnMouseExit", function()
                 ZO_Tooltips_HideTextTooltip()
             end)
         else
-            button:SetHandler("OnMouseEnter", function(self)
-                self:GetChild(1):SetTexture(self.downTexture)
-            end)
-            button:SetHandler("OnMouseExit", function(self)
-                self:GetChild(1):SetTexture(self.upTexture)
-            end)
+            button:SetHandler("OnMouseEnter", nil)
+            button:SetHandler("OnMouseExit", nil)
         end
         --Set the callback function of the button
         button:SetHandler("OnClicked", function(...)
@@ -133,9 +115,6 @@ local function AddButton(parent, name, callbackFunction, onMouseUpCallbackFuncti
                 end
             end)
         end
-        button:SetHandler("OnMouseDown", function(butn)
-            butn:GetChild(1):SetTexture(butn.clickedTexture)
-        end)
 
         --Set the button's visibility and mouse reaction state
         button:SetHidden(hideButton)

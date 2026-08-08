@@ -87,46 +87,36 @@ local function addButton(myAnchorPoint, relativeTo, relativePoint, offsetX, offs
         --SetAnchor(point, relativeTo, relativePoint, offsetX, offsetY)
         button:SetAnchor(myAnchorPoint, relativeTo, relativePoint, offsetX, offsetY)
 
-        --Texture
-        local texture
-
-        --Check if texture exists
-        texture = WM:GetControlByName(btnName, "Texture")
-        if texture == nil then
-            --Create the texture for the button to hold the image
-            texture = WM:CreateControl(btnName .. "Texture", button, CT_TEXTURE)
+        -- Native button textures (same path as ZO_CloseButton / chat Options)
+        local normalTexture = buttonData.normal
+        button:SetNormalTexture(normalTexture)
+        button:SetPressedTexture(buttonData.pressed or normalTexture)
+        button:SetMouseOverTexture(buttonData.highlight or normalTexture)
+        if buttonData.disabled then
+            button:SetDisabledTexture(buttonData.disabled)
+        else
+            button:SetDisabledTexture(normalTexture)
         end
-        texture:SetAnchorFill()
+        button:SetMouseOverBlendMode(TEX_BLEND_MODE_ADD)
 
-        --Set the texture for normale state now
-        texture:SetTexture(buttonData.normal)
+        if buttonData.drawLevel ~= nil then
+            button:SetDrawLevel(buttonData.drawLevel)
+        end
+        if buttonData.excludeFromResizeToFitExtents == true then
+            button:SetExcludeFromResizeToFitExtents(true)
+        end
 
-        --Do we have seperate textures for the button states?
-        button.upTexture 	  = buttonData.normal
-        button.mouseOver 	  = buttonData.highlight
-        button.clickedTexture = buttonData.pressed
-
-        button.tooltipText	= buttonData.tooltip
+        button.tooltipText = buttonData.tooltip
         button.tooltipAlign = TOP
         button:SetHandler("OnMouseEnter", function(self)
-            self:GetChild(1):SetTexture(self.mouseOver)
             ZO_Tooltips_ShowTextTooltip(self, self.tooltipAlign, self.tooltipText)
         end)
-        button:SetHandler("OnMouseExit", function(self)
-            self:GetChild(1):SetTexture(self.upTexture)
+        button:SetHandler("OnMouseExit", function()
             ZO_Tooltips_HideTextTooltip()
         end)
         --Set the callback function of the button
         button:SetHandler("OnClicked", function(...)
             buttonData.callback(...)
-        end)
-        button:SetHandler("OnMouseUp", function(butn, mouseButton, upInside)
-            if upInside then
-                butn:GetChild(1):SetTexture(butn.upTexture)
-            end
-        end)
-        button:SetHandler("OnMouseDown", function(butn)
-            butn:GetChild(1):SetTexture(butn.clickedTexture)
         end)
 
         local isHidden = false
